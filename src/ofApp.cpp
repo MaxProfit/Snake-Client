@@ -31,10 +31,9 @@ void snakeGame::setup(){
         std::cerr << e.what() << std::endl;
     }
     
-    std::cout << "server initialized" << std::endl;
     
     
-    id_ = 5;
+    id_ = 54;
 }
 
 /*
@@ -55,9 +54,8 @@ void snakeGame::update() {
 //    auto j4 = json::parse("{ \"happy\": false, \"pi\": 3.141 }");
 //    client_->send_json(j4);
     
-    
-    std::cout << client_->get_recent_json().dump() << std::endl;
-    
+//
+//    std::cout << client_->get_recent_json().dump() << std::endl;
     json json_to_parse = receive_json();
     
     if (!json_to_parse.is_null()) {
@@ -85,8 +83,6 @@ void snakeGame::update() {
             }
         }
     }
-    
-    sleep(1);
 }
 
 /*
@@ -126,41 +122,38 @@ void snakeGame::keyPressed(int key){
     if (current_state_ == GameState::IN_PROGRESS) {
         
         // If current direction has changed to a valid new one, force an immediate update and skip the next frame update
-        if (upper_key == 'W') {
-//            update();
-//            should_update_ = false;
+        if (upper_key == 'W' && should_update_) {
+            should_update_ = false;
             json_to_send_["id"] = id_;
-            json_to_send_["action"] = std::string("UP");
+            json_to_send_["action"] = std::string("W");
             send_json(json_to_send_);
             json_to_send_.clear();
 
-        } else if (upper_key == 'A') {
-//            update();
-//            should_update_ = false;
+        } else if (upper_key == 'A' && should_update_) {
+            should_update_ = false;
             json_to_send_["id"] = id_;
-            json_to_send_["action"] = std::string("LEFT");
+            json_to_send_["action"] = std::string("A");
             send_json(json_to_send_);
             json_to_send_.clear();
             
-        } else if (upper_key == 'S') {
-//            update();
-//            should_update_ = false;
+        } else if (upper_key == 'S' && should_update_) {
+            should_update_ = false;
             json_to_send_["id"] = id_;
-            json_to_send_["action"] = std::string("DOWN");
+            json_to_send_["action"] = std::string("S");
             send_json(json_to_send_);
             json_to_send_.clear();
             
-        } else if (upper_key == 'D') {
-//            update();
-//            should_update_ = false;
+        } else if (upper_key == 'D' && should_update_) {
+            should_update_ = false;
             json_to_send_["id"] = id_;
-            json_to_send_["action"] = std::string("RIGHT");
+            json_to_send_["action"] = std::string("D");
             send_json(json_to_send_);
             json_to_send_.clear();
         }
-    } else if (upper_key == 'R' && current_state_ == GameState::FINISHED) {
+    } else if (upper_key == 'R' && current_state_ == GameState::FINISHED && should_update_) {
+        should_update_ = false;
         json_to_send_["id"] = id_;
-        json_to_send_["action"] = std::string("RESET");
+        json_to_send_["action"] = std::string("R");
         send_json(json_to_send_);
         json_to_send_.clear();
     }
@@ -203,7 +196,9 @@ void snakeGame::drawGameOver() {
 }
 
 void snakeGame::send_json(json json_to_send) {
+//    std::cout << json_to_send.dump() << std::endl;
     client_->send_json(json_to_send);
+    should_update_ = true;
 }
 
 json snakeGame::receive_json() {

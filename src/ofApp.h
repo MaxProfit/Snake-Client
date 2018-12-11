@@ -79,6 +79,9 @@ namespace snakelinkedlist {
         std::unique_ptr<boost::asio::io_context> io_context_;
         std::unique_ptr<chat_client> client_;
         std::unique_ptr<thread> thread_;
+        std::mutex mtx_;
+        
+        bool should_update_ = true;
         
         
         
