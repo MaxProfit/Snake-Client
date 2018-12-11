@@ -6,12 +6,13 @@
 #include <utility>
 #include <vector>
 #include <unordered_map>
+#include <boost/asio.hpp>
+#include "chat_client.hpp"
+#include <thread>
+#include <memory>
 
 #include "json.hpp"
 #include "ofMain.h"
-#include "snake.h"
-#include "SnakeFood.h"
-#include <tuple>
 
 namespace snakelinkedlist {
     
@@ -72,7 +73,15 @@ namespace snakelinkedlist {
         
         void send_json(nlohmann::json json_to_send);
         
-        nlohmann::json recieve_json();
+        nlohmann::json receive_json();
+        
+        
+        std::unique_ptr<boost::asio::io_context> io_context_;
+        std::unique_ptr<chat_client> client_;
+        std::unique_ptr<thread> thread_;
+        
+        
+        
         
     public:
         // Function used for one time setup
@@ -87,4 +96,10 @@ namespace snakelinkedlist {
         void windowResized(int w, int h);
     };
 } // namespace snakelinkedlist
+
+namespace networking {
+    const std::string kIPADDRESS("127.0.0.1");
+    const std::string kPORT("49145");
+    
+}
 #endif

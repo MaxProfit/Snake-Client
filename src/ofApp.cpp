@@ -21,6 +21,19 @@ void snakeGame::setup(){
     srand(static_cast<unsigned>(time(0))); // Seed random with current time
     // SETUP THE NETWORKING HERE AND GET THE ID OF OUR SNAKE
     
+    try {
+        io_context_ = std::make_unique<boost::asio::io_context>();
+        boost::asio::ip::tcp::resolver resolver(*io_context_);
+        auto endpoints = resolver.resolve(networking::kIPADDRESS.c_str(), networking::kPORT.c_str());
+        client_ = std::make_unique<chat_client>(*io_context_, endpoints);
+        thread_ = std::make_unique<std::thread>([this](){ this->io_context_->run(); });
+    } catch (std::exception& e) {
+        std::cerr << e.what() << std::endl;
+    }
+    
+    std::cout << "server initialized" << std::endl;
+    
+    
     id_ = 5;
 }
 
@@ -35,57 +48,45 @@ void snakeGame::setup(){
  4. Check to see if the snakes new position has resulted in its death and the end of the game
  */
 void snakeGame::update() {
-    json json_to_parse = recieve_json();
     
-    // get food locations
-    food_loc_ = json_to_parse["food"].get<std::vector<std::pair<int, int>>>();
+//    auto j3 = json::parse("{ \"happy\": true, \"pi\": 3.141 }");
+//    client_->send_json(j3);
+//    
+//    auto j4 = json::parse("{ \"happy\": false, \"pi\": 3.141 }");
+//    client_->send_json(j4);
     
-    // Get snake locations and info
     
-    for (json j : json_to_parse["snakes"]) {
-        snakejson::snake s = j.get<snakejson::snake>();
-        sneks_.push_back(s);
-    }
+    std::cout << client_->get_recent_json().dump() << std::endl;
     
-    // Get this snake
-    for (int i = 0; i < sneks_.size(); ++i) {
-        if (sneks_.at(i).id == id_) {
-            // This is our snake
-            num_food_eaten_ = sneks_.at(i).length;
-            alive_ = sneks_.at(i).alive;
+    json json_to_parse = receive_json();
+    
+    if (!json_to_parse.is_null()) {
+        // get food locations
+        food_loc_ = json_to_parse["food"].get<std::vector<std::pair<int, int>>>();
+        
+        // Get snake locations and info
+        
+        for (json j : json_to_parse["snakes"]) {
+            snakejson::snake s = j.get<snakejson::snake>();
+            sneks_.push_back(s);
+        }
+        
+        // Get this snake
+        for (int i = 0; i < sneks_.size(); ++i) {
+            if (sneks_.at(i).id == id_) {
+                // This is our snake
+                num_food_eaten_ = sneks_.at(i).length;
+                alive_ = sneks_.at(i).alive;
+                if (alive_) {
+                    current_state_ = GameState::IN_PROGRESS;
+                } else {
+                    current_state_ = GameState::FINISHED;
+                }
+            }
         }
     }
     
-    
-    // PARSE THE JSON FOOD INTO A VECTOR OF PAIRS OF INTS
-    // PARSE THE JSON SNAKES INTO A UNORDERED MAP OF VECTORS OF PAIRS OF INTS
-    // WHAT IS THIS ONE'S ID
-    
-//    if (should_update_) {
-//        if (current_state_ == IN_PROGRESS) {
-//            ofVec2f snake_body_size = game_snake_.getBodySize();
-//            ofVec2f head_pos = game_snake_.getHead()->position;
-//            ofRectangle snake_rect(head_pos.x, head_pos.y, snake_body_size.x, snake_body_size.y);
-//
-//            if (snake_rect.intersects(game_food_.getFoodRect())) {
-//                game_snake_.eatFood(ofColor(0,100,0));
-//                game_food_.rebase();
-//            }
-//            game_snake_.update();
-//
-//            if (game_snake_.isDead()) {
-//                current_state_ = FINISHED;
-//            }
-//        }
-//    }
-//
-//    should_update_ = true;
-//}
-    
-    
-    if (current_state_ == GameState::IN_PROGRESS && !alive_) {
-        current_state_ = GameState::FINISHED;
-    }
+    sleep(1);
 }
 
 /*
@@ -164,17 +165,9 @@ void snakeGame::keyPressed(int key){
         json_to_send_.clear();
     }
 }
-//
-//void snakeGame::reset() {
-//
-//    // THIS SHOULDN'T MATTER AS LONG AS THE SERVER HAS THE ID ASSOCIATED
-////    game_snake_ = Snake();
-////    game_food_.rebase();
-//    current_state_ = IN_PROGRESS;
-//#warning TODO: DO NETWORKING CALL
-//}
 
 void snakeGame::windowResized(int w, int h){
+    // Do nothing here
 //    game_food_.resize(w, h);
 //    game_snake_.resize(w, h);
 }
@@ -210,21 +203,9 @@ void snakeGame::drawGameOver() {
 }
 
 void snakeGame::send_json(json json_to_send) {
-    std::ofstream file_output("/Users/matthew/Documents/Xcode/finalproject-MaxProfit/interchange/to_server.json");
-    // Pushes the json to the file with a width of
-    file_output << std::setw(2) << json_to_send << std::endl;
+    client_->send_json(json_to_send);
 }
 
-json snakeGame::recieve_json() {
-    // Open the file and read into memory
-    json json_holder;
-    std::ifstream file_input("/Users/matthew/Documents/Xcode/finalproject-MaxProfit/example/nominal_server_to_client.json");
-//    std::ifstream file_input("/Users/matthew/Documents/Xcode/finalproject-MaxProfit/interchange/to_client.json");
-    
-    try {
-        file_input >> json_holder;
-    } catch (std::exception& e) {
-        std::cerr << e.what() << std::endl;
-    }
-    return json_holder;
+json snakeGame::receive_json() {
+    return client_->get_recent_json();
 }

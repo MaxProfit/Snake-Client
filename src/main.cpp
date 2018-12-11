@@ -1,5 +1,6 @@
 #include "ofMain.h"
 #include "ofApp.h"
+#include <boost/asio.hpp>
 
 int main() {
     ofSetupOpenGL(1200, 675, OF_WINDOW); // setup the GL context

@@ -12,6 +12,7 @@
 		1B93332E121EC61623DEB6C1 /* ofxSlider.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 335D0B870128290EC3B28F69 /* ofxSlider.cpp */; };
 		223F2E85B2F6A58EF2FE7426 /* ofxButton.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 298E7E50A5A234FB92968F77 /* ofxButton.cpp */; };
 		2B2512704BF6235475C75EF0 /* ofxLabel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0B7E81B114C02BB2725777D6 /* ofxLabel.cpp */; };
+		3458718521BFAFEF00AD677B /* chat_client.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3458718421BFAFEF00AD677B /* chat_client.cpp */; };
 		36A67F8C4B86DDCF4A754E30 /* ofxTCPClient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D18ADFC7C7F8D75AEF1A533E /* ofxTCPClient.cpp */; };
 		46D5A653C320C691FE1AC625 /* ofxNetworkUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0887CEE48B4016A2524F1962 /* ofxNetworkUtils.cpp */; };
 		609ECECB5D4D6CF78E545B80 /* ofxUDPManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 59A30159E26E08AEA34512C4 /* ofxUDPManager.cpp */; };
@@ -50,6 +51,9 @@
 		27589FC99F3CFD2D09DDCC20 /* ofxTCPServer.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ofxTCPServer.cpp; path = ../../../Development/cs126cpp/OpenFrameworks/of_v0.10.1_osx_release/addons/ofxNetwork/src/ofxTCPServer.cpp; sourceTree = SOURCE_ROOT; };
 		298E7E50A5A234FB92968F77 /* ofxButton.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ofxButton.cpp; path = ../../../Development/cs126cpp/OpenFrameworks/of_v0.10.1_osx_release/addons/ofxGui/src/ofxButton.cpp; sourceTree = SOURCE_ROOT; };
 		335D0B870128290EC3B28F69 /* ofxSlider.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ofxSlider.cpp; path = ../../../Development/cs126cpp/OpenFrameworks/of_v0.10.1_osx_release/addons/ofxGui/src/ofxSlider.cpp; sourceTree = SOURCE_ROOT; };
+		3458718221BFAFEF00AD677B /* chat_client.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = chat_client.hpp; sourceTree = "<group>"; };
+		3458718321BFAFEF00AD677B /* chat_message.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = chat_message.hpp; sourceTree = "<group>"; };
+		3458718421BFAFEF00AD677B /* chat_client.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = chat_client.cpp; sourceTree = "<group>"; };
 		34C8FB6B21BE566C00A617F7 /* json.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = json.hpp; sourceTree = "<group>"; };
 		406201AB8CCFA37CF49B8FEB /* ofxNetwork.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ofxNetwork.h; path = ../../../Development/cs126cpp/OpenFrameworks/of_v0.10.1_osx_release/addons/ofxNetwork/src/ofxNetwork.h; sourceTree = SOURCE_ROOT; };
 		5549B03E1EE5447916CCDFD3 /* ofxInputField.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ofxInputField.h; path = ../../../Development/cs126cpp/OpenFrameworks/of_v0.10.1_osx_release/addons/ofxGui/src/ofxInputField.h; sourceTree = SOURCE_ROOT; };
@@ -646,6 +650,9 @@
 		E4B69E1C0A3A1BDC003C02F2 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				3458718421BFAFEF00AD677B /* chat_client.cpp */,
+				3458718221BFAFEF00AD677B /* chat_client.hpp */,
+				3458718321BFAFEF00AD677B /* chat_message.hpp */,
 				34C8FB6B21BE566C00A617F7 /* json.hpp */,
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
 				E4B69E1E0A3A1BDC003C02F2 /* ofApp.cpp */,
@@ -754,6 +761,7 @@
 			files = (
 				E4B69E200A3A1BDC003C02F2 /* main.cpp in Sources */,
 				E4B69E210A3A1BDC003C02F2 /* ofApp.cpp in Sources */,
+				3458718521BFAFEF00AD677B /* chat_client.cpp in Sources */,
 				05678FF8185F8767FE758D29 /* ofxBaseGui.cpp in Sources */,
 				223F2E85B2F6A58EF2FE7426 /* ofxButton.cpp in Sources */,
 				C79B6F0C0BA3D4C363EB7770 /* ofxColorPicker.cpp in Sources */,
@@ -828,6 +836,7 @@
 					src,
 					../../../Development/cs126cpp/OpenFrameworks/of_v0.10.1_osx_release/addons/ofxGui/src,
 					../../../Development/cs126cpp/OpenFrameworks/of_v0.10.1_osx_release/addons/ofxNetwork/src,
+					/usr/local/Cellar/boost/1.68.0/include/,
 				);
 				ICON = "$(ICON_NAME_RELEASE)";
 				ICON_FILE = "$(ICON_FILE_PATH)$(ICON)";
@@ -933,6 +942,7 @@
 					src,
 					../../../Development/cs126cpp/OpenFrameworks/of_v0.10.1_osx_release/addons/ofxGui/src,
 					../../../Development/cs126cpp/OpenFrameworks/of_v0.10.1_osx_release/addons/ofxNetwork/src,
+					/usr/local/Cellar/boost/1.68.0/include/,
 				);
 				ICON = "$(ICON_NAME_DEBUG)";
 				ICON_FILE = "$(ICON_FILE_PATH)$(ICON)";
@@ -964,6 +974,7 @@
 					src,
 					../../../Development/cs126cpp/OpenFrameworks/of_v0.10.1_osx_release/addons/ofxGui/src,
 					../../../Development/cs126cpp/OpenFrameworks/of_v0.10.1_osx_release/addons/ofxNetwork/src,
+					/usr/local/Cellar/boost/1.68.0/include/,
 				);
 				ICON = "$(ICON_NAME_RELEASE)";
 				ICON_FILE = "$(ICON_FILE_PATH)$(ICON)";
