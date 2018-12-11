@@ -1,13 +1,27 @@
 #include "ofApp.h"
 #include <iostream>
+#include <cstdio>
 
 using namespace snakelinkedlist;
+using nlohmann::json;
+
+void snakejson::from_json(const json& j, snakejson::snake& s) {
+    j.at("id").get_to(s.id);
+    j.at("length").get_to(s.length);
+    j.at("alive").get_to(s.alive);
+    j.at("direction").get_to(s.direction);
+    j.at("color").get_to(s.color);
+    j.at("location").get_to(s.coords);
+}
 
 // Setup method
 void snakeGame::setup(){
     ofSetWindowTitle("Snake126");
     
     srand(static_cast<unsigned>(time(0))); // Seed random with current time
+    // SETUP THE NETWORKING HERE AND GET THE ID OF OUR SNAKE
+    
+    id_ = 5;
 }
 
 /*
@@ -21,25 +35,57 @@ void snakeGame::setup(){
  4. Check to see if the snakes new position has resulted in its death and the end of the game
  */
 void snakeGame::update() {
-    if (should_update_) {
-        if (current_state_ == IN_PROGRESS) {
-            ofVec2f snake_body_size = game_snake_.getBodySize();
-            ofVec2f head_pos = game_snake_.getHead()->position;
-            ofRectangle snake_rect(head_pos.x, head_pos.y, snake_body_size.x, snake_body_size.y);
-            
-            if (snake_rect.intersects(game_food_.getFoodRect())) {
-                game_snake_.eatFood(ofColor(0,100,0));
-                game_food_.rebase();
-            }
-            game_snake_.update();
-            
-            if (game_snake_.isDead()) {
-                current_state_ = FINISHED;
-            }
+    json json_to_parse = recieve_json();
+    
+    // get food locations
+    food_loc_ = json_to_parse["food"].get<std::vector<std::pair<int, int>>>();
+    
+    // Get snake locations and info
+    
+    for (json j : json_to_parse["snakes"]) {
+        snakejson::snake s = j.get<snakejson::snake>();
+        sneks_.push_back(s);
+    }
+    
+    // Get this snake
+    for (int i = 0; i < sneks_.size(); ++i) {
+        if (sneks_.at(i).id == id_) {
+            // This is our snake
+            num_food_eaten_ = sneks_.at(i).length;
+            alive_ = sneks_.at(i).alive;
         }
     }
     
-    should_update_ = true;
+    
+    // PARSE THE JSON FOOD INTO A VECTOR OF PAIRS OF INTS
+    // PARSE THE JSON SNAKES INTO A UNORDERED MAP OF VECTORS OF PAIRS OF INTS
+    // WHAT IS THIS ONE'S ID
+    
+//    if (should_update_) {
+//        if (current_state_ == IN_PROGRESS) {
+//            ofVec2f snake_body_size = game_snake_.getBodySize();
+//            ofVec2f head_pos = game_snake_.getHead()->position;
+//            ofRectangle snake_rect(head_pos.x, head_pos.y, snake_body_size.x, snake_body_size.y);
+//
+//            if (snake_rect.intersects(game_food_.getFoodRect())) {
+//                game_snake_.eatFood(ofColor(0,100,0));
+//                game_food_.rebase();
+//            }
+//            game_snake_.update();
+//
+//            if (game_snake_.isDead()) {
+//                current_state_ = FINISHED;
+//            }
+//        }
+//    }
+//
+//    should_update_ = true;
+//}
+    
+    
+    if (current_state_ == GameState::IN_PROGRESS && !alive_) {
+        current_state_ = GameState::FINISHED;
+    }
 }
 
 /*
@@ -49,11 +95,11 @@ void snakeGame::update() {
  3. Draw the current position of the food and of the snake
  */
 void snakeGame::draw(){
-    if(current_state_ == FINISHED) {
+    if (current_state_ == GameState::FINISHED) {
         drawGameOver();
     }
     drawFood();
-    drawSnake();
+    drawSnakes();
 }
 
 /*
@@ -76,72 +122,109 @@ void snakeGame::keyPressed(int key){
     
     int upper_key = toupper(key); // Standardize on upper case
     
-    if (current_state_ == IN_PROGRESS) {
-        SnakeDirection current_direction = game_snake_.getDirection();
+    if (current_state_ == GameState::IN_PROGRESS) {
         
         // If current direction has changed to a valid new one, force an immediate update and skip the next frame update
-        if (upper_key == 'W' && current_direction != DOWN && current_direction != UP) {
-            // Call the networking function to go up
-            game_snake_.setDirection(UP);
-            update();
-            should_update_ = false;
+        if (upper_key == 'W') {
+//            update();
+//            should_update_ = false;
+            json_to_send_["id"] = id_;
+            json_to_send_["action"] = std::string("UP");
+            send_json(json_to_send_);
+            json_to_send_.clear();
+
+        } else if (upper_key == 'A') {
+//            update();
+//            should_update_ = false;
+            json_to_send_["id"] = id_;
+            json_to_send_["action"] = std::string("LEFT");
+            send_json(json_to_send_);
+            json_to_send_.clear();
+            
+        } else if (upper_key == 'S') {
+//            update();
+//            should_update_ = false;
+            json_to_send_["id"] = id_;
+            json_to_send_["action"] = std::string("DOWN");
+            send_json(json_to_send_);
+            json_to_send_.clear();
+            
+        } else if (upper_key == 'D') {
+//            update();
+//            should_update_ = false;
+            json_to_send_["id"] = id_;
+            json_to_send_["action"] = std::string("RIGHT");
+            send_json(json_to_send_);
+            json_to_send_.clear();
         }
-        else if (upper_key == 'A' && current_direction != RIGHT && current_direction != LEFT) {
-            // Call the networking function to go left
-            game_snake_.setDirection(LEFT);
-            update();
-            should_update_ = false;
-        }
-        else if ((upper_key == 'S') && current_direction != UP && current_direction != DOWN) {
-            // Call the networking function to go down
-            game_snake_.setDirection(DOWN);
-            update();
-            should_update_ = false;
-        }
-        else if (upper_key == 'D' && current_direction != LEFT && current_direction != RIGHT) {
-            // Call the networking function to go right
-            game_snake_.setDirection(RIGHT);
-            update();
-            should_update_ = false;
-        }
-    } else if (upper_key == 'R' && current_state_ == FINISHED) {
-        reset();
-        // Call the networking function to reset the game
+    } else if (upper_key == 'R' && current_state_ == GameState::FINISHED) {
+        json_to_send_["id"] = id_;
+        json_to_send_["action"] = std::string("RESET");
+        send_json(json_to_send_);
+        json_to_send_.clear();
     }
 }
-
-void snakeGame::reset() {
-    game_snake_ = Snake();
-    game_food_.rebase();
-    current_state_ = IN_PROGRESS;
-}
+//
+//void snakeGame::reset() {
+//
+//    // THIS SHOULDN'T MATTER AS LONG AS THE SERVER HAS THE ID ASSOCIATED
+////    game_snake_ = Snake();
+////    game_food_.rebase();
+//    current_state_ = IN_PROGRESS;
+//#warning TODO: DO NETWORKING CALL
+//}
 
 void snakeGame::windowResized(int w, int h){
-    game_food_.resize(w, h);
-    game_snake_.resize(w, h);
+//    game_food_.resize(w, h);
+//    game_snake_.resize(w, h);
 }
 
 void snakeGame::drawFood() {
-    ofSetColor(game_food_.getColor());
-    ofDrawRectangle(game_food_.getFoodRect());
+    for (std::pair<int, int> coords : food_loc_) {
+        ofSetColor(ofColor(100,0,0));
+        ofDrawRectangle(coords.first * 25, coords.second * 25, 25, 25);
+    }
 }
 
-void snakeGame::drawSnake() {
-    ofVec2f snake_body_size = game_snake_.getBodySize();
-    ofVec2f head_pos = game_snake_.getHead()->position;
-    ofSetColor(game_snake_.getHead()->color);
-    ofDrawRectangle(head_pos.x, head_pos.y, snake_body_size.x, snake_body_size.y);
-    
-    for (SnakeBody* curr = game_snake_.getHead(); curr != NULL; curr = curr->next) {
-        ofVec2f currPos = curr->position;
-        ofSetColor(curr->color);
-        ofDrawRectangle(currPos.x, currPos.y, snake_body_size.x, snake_body_size.y);
+void snakeGame::drawSnakes() {
+    for (snakejson::snake s : sneks_) {
+        // Set color here
+        int red = s.color.at(0);
+        int green = s.color.at(1);
+        int blue = s.color.at(2);
+        
+        
+        ofSetColor(ofColor(red, green, blue));
+        for (std::pair<int, int> coord : s.coords) {
+            // Draw the coords at each spot
+            ofDrawRectangle(coord.first * 25, coord.second * 25, 25, 25);
+        }
     }
 }
 
 void snakeGame::drawGameOver() {
-    string total_food = std::to_string(game_snake_.getFoodEaten());
+    string total_food = std::to_string(num_food_eaten_);
     string lose_message = "You Lost! Final Score: " + total_food;
     ofSetColor(0, 0, 0);
     ofDrawBitmapString(lose_message, ofGetWindowWidth() / 2, ofGetWindowHeight() / 2);
+}
+
+void snakeGame::send_json(json json_to_send) {
+    std::ofstream file_output("/Users/matthew/Documents/Xcode/finalproject-MaxProfit/interchange/to_server.json");
+    // Pushes the json to the file with a width of
+    file_output << std::setw(2) << json_to_send << std::endl;
+}
+
+json snakeGame::recieve_json() {
+    // Open the file and read into memory
+    json json_holder;
+    std::ifstream file_input("/Users/matthew/Documents/Xcode/finalproject-MaxProfit/example/nominal_server_to_client.json");
+//    std::ifstream file_input("/Users/matthew/Documents/Xcode/finalproject-MaxProfit/interchange/to_client.json");
+    
+    try {
+        file_input >> json_holder;
+    } catch (std::exception& e) {
+        std::cerr << e.what() << std::endl;
+    }
+    return json_holder;
 }
