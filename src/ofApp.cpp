@@ -1,6 +1,8 @@
 #include "ofApp.h"
 #include <iostream>
 #include <cstdio>
+#include <thread>
+#include <chrono>
 
 using namespace snakelinkedlist;
 using nlohmann::json;
@@ -27,6 +29,27 @@ void snakeGame::setup(){
         auto endpoints = resolver.resolve(networking::kIPADDRESS.c_str(), networking::kPORT.c_str());
         client_ = std::make_unique<chat_client>(*io_context_, endpoints);
         thread_ = std::make_unique<std::thread>([this](){ this->io_context_->run(); });
+        std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+        
+        json json_to_parse = client_->get_recent_json();
+        
+        if (json_to_parse.find("Error") != json_to_parse.end()) {
+            std::cout << "Reconnecting..." << std::endl;
+            client_->close();
+            thread_->join();
+            
+            io_context_.release();
+            client_.release();
+            thread_.release();
+            
+            io_context_ = std::make_unique<boost::asio::io_context>();
+            boost::asio::ip::tcp::resolver resolver(*io_context_);
+            auto endpoints = resolver.resolve(networking::kIPADDRESS.c_str(), networking::kPORT.c_str());
+            client_ = std::make_unique<chat_client>(*io_context_, endpoints);
+            thread_ = std::make_unique<std::thread>([this](){ this->io_context_->run(); });
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+        
     } catch (std::exception& e) {
         std::cerr << e.what() << std::endl;
     }
@@ -56,7 +79,8 @@ void snakeGame::update() {
     
 //
 //    std::cout << client_->get_recent_json().dump() << std::endl;
-    json json_to_parse = receive_json();
+    json json_to_parse = client_->get_recent_json();
+    
     
     if (!json_to_parse.is_null()) {
         // get food locations
