@@ -53,10 +53,7 @@ void snakeGame::setup(){
     } catch (std::exception& e) {
         std::cerr << e.what() << std::endl;
     }
-    
-    
-    
-    id_ = 54;
+    id_ = 5;
 }
 
 /*
@@ -191,7 +188,7 @@ void snakeGame::windowResized(int w, int h){
 
 void snakeGame::drawFood() {
     for (std::pair<int, int> coords : food_loc_) {
-        ofSetColor(ofColor(100,0,0));
+        ofSetColor(ofColor(255,0,0));
         ofDrawRectangle(coords.first * 25, coords.second * 25, 25, 25);
     }
 }
@@ -228,3 +225,4 @@ void snakeGame::send_json(json json_to_send) {
 json snakeGame::receive_json() {
     return client_->get_recent_json();
 }
+
