@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <thread>
 #include <chrono>
+#include "ofxTCPClient.h"
 
 using namespace snakelinkedlist;
 using nlohmann::json;
@@ -18,6 +19,9 @@ void snakejson::from_json(const json& j, snakejson::snake& s) {
 
 // Setup method
 void snakeGame::setup(){
+//    ofxTCPClient client;
+//    bool connected = client.setup("127.0.0.1", 49145);
+//    std::cout << "YES WE ARE CONNECTED" << std::endl;
     ofSetWindowTitle("Snake126");
     
     srand(static_cast<unsigned>(time(0))); // Seed random with current time
@@ -68,42 +72,53 @@ void snakeGame::setup(){
  */
 void snakeGame::update() {
     
-//    auto j3 = json::parse("{ \"happy\": true, \"pi\": 3.141 }");
-//    client_->send_json(j3);
-//    
-//    auto j4 = json::parse("{ \"happy\": false, \"pi\": 3.141 }");
-//    client_->send_json(j4);
+    // Start the timer for ensuring we have the best shot to get non gibberish from server
+    std::chrono::milliseconds d = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200) - d);
     
-//
-//    std::cout << client_->get_recent_json().dump() << std::endl;
+    auto start_ = std::chrono::high_resolution_clock::now();
+    
+    // Receives json from the server
     json json_to_parse = client_->get_recent_json();
     
-    
     if (!json_to_parse.is_null()) {
-        // get food locations
-        food_loc_ = json_to_parse["food"].get<std::vector<std::pair<int, int>>>();
-        
-        // Get snake locations and info
-        
-        for (json j : json_to_parse["snakes"]) {
-            snakejson::snake s = j.get<snakejson::snake>();
-            sneks_.push_back(s);
-        }
-        
-        // Get this snake
-        for (int i = 0; i < sneks_.size(); ++i) {
-            if (sneks_.at(i).id == id_) {
-                // This is our snake
-                num_food_eaten_ = sneks_.at(i).length;
-                alive_ = sneks_.at(i).alive;
-                if (alive_) {
-                    current_state_ = GameState::IN_PROGRESS;
-                } else {
-                    current_state_ = GameState::FINISHED;
+        try {
+            
+            // This is necessary because if the json cannot be parsed we have to
+            // Keep displaying something on the screen, if this fails it wont
+            // call clear and we'll still have stuff displayed on our screen
+            auto temp = json_to_parse["food"].get<std::vector<std::pair<int, int>>>();
+            food_loc_.clear();
+            food_loc_ = temp;
+            
+            // Get snake locations and info
+            snake_vec_.clear();
+            for (json j : json_to_parse["snakes"]) {
+                snakejson::snake s = j.get<snakejson::snake>();
+                snake_vec_.push_back(s);
+            }
+            
+            // Get this snake and put it into our fields
+            for (int i = 0; i < snake_vec_.size(); ++i) {
+                if (snake_vec_.at(i).id == id_) {
+                    // This is our snake
+                    num_food_eaten_ = snake_vec_.at(i).length;
+                    alive_ = snake_vec_.at(i).alive;
+                    if (alive_) {
+                        current_state_ = GameState::IN_PROGRESS;
+                    } else {
+                        current_state_ = GameState::FINISHED;
+                    }
                 }
             }
+        } catch (std::exception& e) {
+            std::cerr << e.what() << std::endl;
         }
     }
+    
+    // The time between the entire gameloop
+    auto finish_ = std::chrono::high_resolution_clock::now();
+    elapsed_ = finish_ - start_;
 }
 
 /*
@@ -113,6 +128,10 @@ void snakeGame::update() {
  3. Draw the current position of the food and of the snake
  */
 void snakeGame::draw(){
+    // Wipes the background and then puts the snakes and food back onto it
+    ofColor background_color;
+    background_color.set(255, 255, 255);
+    ofClear(background_color);
     if (current_state_ == GameState::FINISHED) {
         drawGameOver();
     }
@@ -194,16 +213,14 @@ void snakeGame::drawFood() {
 }
 
 void snakeGame::drawSnakes() {
-    for (snakejson::snake s : sneks_) {
+    for (snakejson::snake s : snake_vec_) {
         // Set color here
         int red = s.color.at(0);
         int green = s.color.at(1);
         int blue = s.color.at(2);
         
-        
         ofSetColor(ofColor(red, green, blue));
         for (std::pair<int, int> coord : s.coords) {
-            // Draw the coords at each spot
             ofDrawRectangle(coord.first * 25, coord.second * 25, 25, 25);
         }
     }
@@ -217,8 +234,8 @@ void snakeGame::drawGameOver() {
 }
 
 void snakeGame::send_json(json json_to_send) {
-//    std::cout << json_to_send.dump() << std::endl;
     client_->send_json(json_to_send);
+    // Allows the client to send keystrokes again
     should_update_ = true;
 }
 

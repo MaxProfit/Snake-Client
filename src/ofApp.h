@@ -18,6 +18,7 @@ namespace snakelinkedlist {
     
     namespace snakejson {
         
+        // Used to define how we will parse out the snake from JSON
         struct snake {
             int id;
             int length;
@@ -27,6 +28,7 @@ namespace snakelinkedlist {
             std::vector<std::pair<int, int>> coords;
         };
         
+        // Allows the snakes to be parsed out into snake structs easily
         void from_json(const nlohmann::json& j, snakejson::snake& s);
     }
     
@@ -40,7 +42,7 @@ namespace snakelinkedlist {
     private:
         
         std::vector<std::pair<int, int>> food_loc_;
-        std::vector<snakejson::snake> sneks_;
+        std::vector<snakejson::snake> snake_vec_;
         
         snakejson::snake our_snake_;
         
@@ -50,11 +52,10 @@ namespace snakelinkedlist {
         uint32_t id_;
         int num_food_eaten_;
         
-        
+        // The json we wish to send to the server
         nlohmann::json json_to_send_;
-        // THIS WILL BE WHERE WE STORE THE NETWORKING STUFF
         
-        
+        // Start us off as alive
         GameState current_state_ = GameState::IN_PROGRESS; // The current state of the game, used to determine possible actions
         
 //        bool should_update_ = true;     // A flag boolean used in the update() function. Due to the frame dependent animation we've
@@ -71,19 +72,25 @@ namespace snakelinkedlist {
         // Resets the game objects to their original state.
         void reset();
         
+        // sends the JSON to the server through the chat_client
         void send_json(nlohmann::json json_to_send);
         
+        // Gets the most recent JSON from the server
         nlohmann::json receive_json();
         
-        
+        // Creates unique pointers for the networking things so we can refer to them
         std::unique_ptr<boost::asio::io_context> io_context_;
         std::unique_ptr<chat_client> client_;
         std::unique_ptr<thread> thread_;
-        std::mutex mtx_;
         
+        // Allows us to use the keyboard and the stuff will be sent
         bool should_update_ = true;
         
-        
+        // Used to time the duration between when we're receiving the json
+        // to ensure the we can read the server while the sockets are still on
+        std::chrono::duration<double> elapsed_;
+        std::chrono::high_resolution_clock::time_point start_;
+        std::chrono::high_resolution_clock::time_point finish_;
         
         
     public:
@@ -101,6 +108,7 @@ namespace snakelinkedlist {
 } // namespace snakelinkedlist
 
 namespace networking {
+    // Where we are connecting to
     const std::string kIPADDRESS("127.0.0.1");
     const std::string kPORT("49145");
     
